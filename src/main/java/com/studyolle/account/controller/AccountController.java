@@ -11,4 +11,5 @@ public class AccountController {
 	public String signUpForm(Model model) {
 		return "account/sign-up";
 	}
+	
 }
