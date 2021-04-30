@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
-import com.studyolle.repository.AcoountRepository;
+import com.studyolle.repository.AccountRepository;
 import com.studyolle.repository.dto.SignUpForm;
 
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor		//final 인 생성자를 자동으로 만들어 준다.
 public class SignUpFormValidator implements Validator{
 	
-	private final AcoountRepository accountRopository;
+	private final AccountRepository accountRopository;
 	
 
 	@Override
@@ -24,8 +24,8 @@ public class SignUpFormValidator implements Validator{
 	}
 	
 	@Override
-	public void validate(Object o, Errors errors) {
-		SignUpForm signUpForm=(SignUpForm)errors;
+	public void validate(Object object, Errors errors) {
+		SignUpForm signUpForm=(SignUpForm)object;
 		if(accountRopository.existsByEmail(signUpForm.getEmail())) {
 			errors.rejectValue("email","invalid.email",new Object[] {signUpForm.getEmail()},"이미 사용중인 이메일입니다.");
 		}
