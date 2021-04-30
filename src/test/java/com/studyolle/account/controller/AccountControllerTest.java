@@ -1,6 +1,10 @@
 package com.studyolle.account.controller;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.then;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -8,8 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-
-import javax.mail.internet.MimeMessage;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,9 +23,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.BDDMockito.then;
-import static org.mockito.ArgumentMatchers.any;
 import com.studyolle.repository.AccountRepository;
+import com.studyolle.repository.dto.Account;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -45,7 +46,7 @@ public class AccountControllerTest {
 				.andExpect(view().name("account/sign-up")).andExpect(model().attributeExists("signUpForm"));
 	}
 
-	@DisplayName("회원 가입 처리 - 입력값 오류")
+	@DisplayName("회원 가입 처리 - 입력값 정상")
 	@Test
 	void signUpSubmit_with_wrong_input() throws Exception {
 		mockMvc.perform(post("/sign-up").param("nickname", "keesun").param("email", "keesun@email.com")
@@ -53,6 +54,9 @@ public class AccountControllerTest {
 
 				.andExpect(status().isOk()).andExpect(view().name("account/sign-up"));
 		
+		Account account = accountRepository.findByEmail("keesun@email.com");
+		assertNotNull(account);
+		assertNotEquals(account.getPassword(), "12345678");
 		assertTrue(accountRepository.existsByEmail("keesun@email.com"));
 		then(javaMailsender).should().send(any(SimpleMailMessage.class));
 
