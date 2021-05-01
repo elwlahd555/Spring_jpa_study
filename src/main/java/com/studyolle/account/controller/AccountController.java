@@ -1,5 +1,7 @@
 package com.studyolle.account.controller;
 
+import java.time.LocalDateTime;
+
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,8 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import com.studyolle.account.service.AccountService;
+import com.studyolle.repository.AccountRepository;
+import com.studyolle.repository.dto.Account;
 import com.studyolle.repository.dto.SignUpForm;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class AccountController {
 
 	private final SignUpFormValidator signUpFormValidator;
+	private final AccountRepository accountRepository;
 
 	@Autowired
 	AccountService accountService;
@@ -44,6 +49,24 @@ public class AccountController {
 		accountService.processNewAccount(signUpForm);
 		return "account/sign-up";
 	}
-
-
+	
+	@GetMapping("/check-email-token")
+	public String checkEmailToken(String token, String email, Model model) {
+		Account account = accountRepository.findByEmail(email);
+		String view= "account/checked-email";
+		if(account == null) {
+			model.addAttribute("error","wrong.email");
+			return view;
+		}
+		if(!account.getEmailCheckToken().equals(token)) {
+			model.addAttribute("error","wrong.token");
+			return view;
+		}
+		
+		account.setEmailVerified(true);
+		account.setJoinedAt(LocalDateTime.now());
+		model.addAttribute("numberOfUser",accountRepository.count());
+		model.addAttribute("nickname",account.getNickname());
+		return view;
+	}
 }
