@@ -1,12 +1,16 @@
 package com.studyolle.account.service;
 
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
+import com.studyolle.config.AppProperties;
+import com.studyolle.email.service.EmailService;
 import com.studyolle.repository.AccountRepository;
 import com.studyolle.repository.dto.Account;
+import com.studyolle.repository.dto.EmailMessage;
 import com.studyolle.repository.dto.SignUpForm;
 
 import lombok.RequiredArgsConstructor;
@@ -17,11 +21,12 @@ public class AccountService {
 	
 
 	private final AccountRepository accountRepository;
-	private final JavaMailSender javaMailSender;
 	private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final TemplateEngine templateEngine;
+    private final AppProperties appProperties;
 	
-	
-
+	@Transactional
 	public void processNewAccount(SignUpForm signUpForm) {
 		Account newAccount = saveNewAccount(signUpForm);
 		sendSignUpConfirmEmail(newAccount);
@@ -40,10 +45,21 @@ public class AccountService {
 	}
 
 	public void sendSignUpConfirmEmail(Account newAccount) {
-		SimpleMailMessage mailMessage = new SimpleMailMessage();
-		mailMessage.setSubject("스터디올래, 회원 가입 인증");
-		mailMessage.setText(
-				"/check-email-tocken?token=" + newAccount.getEmailCheckToken() + "&email=" + newAccount.getEmail());
-		javaMailSender.send(mailMessage);
+
+//        Context context = new Context();
+//        context.setVariable("link", );
+//        context.setVariable("nickname", newAccount.getNickname());
+//        context.setVariable("linkName", "이메일 인증하기");
+//        context.setVariable("message", "스터디올래 서비스를 사용하려면 링크를 클릭하세요.");
+//        context.setVariable("host", appProperties.getHost());
+//        String message = templateEngine.process("mail/simple-link", context);
+        
+        EmailMessage emailMessage = EmailMessage.builder()
+                .to(newAccount.getEmail())
+                .subject("스터디올래, 회원 가입 인증")
+                .message("/check-email-token?token=" + newAccount.getEmailCheckToken() +
+                        "&email=" + newAccount.getEmail())
+                .build();
+		emailService.sendEmail(emailMessage);
 	}
 }
