@@ -1,10 +1,23 @@
 package com.studyolle.account.service;
 
+<<<<<<< HEAD
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+=======
+import java.util.List;
+
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+>>>>>>> temp
 
 import com.studyolle.config.AppProperties;
 import com.studyolle.email.service.EmailService;
@@ -26,10 +39,18 @@ public class AccountService {
     private final TemplateEngine templateEngine;
     private final AppProperties appProperties;
 	
+<<<<<<< HEAD
 	@Transactional
 	public void processNewAccount(SignUpForm signUpForm) {
+=======
+	
+
+	@Transactional
+	public Account processNewAccount(SignUpForm signUpForm) {
+>>>>>>> temp
 		Account newAccount = saveNewAccount(signUpForm);
 		sendSignUpConfirmEmail(newAccount);
+		return newAccount;
 	}
 	
 	public Account saveNewAccount(SignUpForm signUpForm) {
@@ -45,6 +66,7 @@ public class AccountService {
 	}
 
 	public void sendSignUpConfirmEmail(Account newAccount) {
+<<<<<<< HEAD
 
 //        Context context = new Context();
 //        context.setVariable("link", );
@@ -61,5 +83,20 @@ public class AccountService {
                         "&email=" + newAccount.getEmail())
                 .build();
 		emailService.sendEmail(emailMessage);
+=======
+		SimpleMailMessage mailMessage = new SimpleMailMessage();
+		mailMessage.setSubject("스터디올래, 회원 가입 인증");
+		mailMessage.setText(
+				"/check-email-token?token=" + newAccount.getEmailCheckToken() + "&email=" + newAccount.getEmail());
+		javaMailSender.send(mailMessage);
+>>>>>>> temp
+	}
+
+	public void login(Account account) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                account.getNickname(),
+                account.getPassword(),
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(token);
 	}
 }
