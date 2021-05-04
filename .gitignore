@@ -31,3 +31,4 @@ build/
 
 ### VS Code ###
 .vscode/
+src/main/resources/static/node/node_modules/npm/node_modules/node-gyp/node_modules/path-array/node_modules/array-index/node_modules/es6-symbol/node_modules/es5-ext/node_modules/es6-symbol/test/is-native-implemented.js
