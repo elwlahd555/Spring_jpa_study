@@ -18,11 +18,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.mvcMatchers("/", "/login", "/sign-up", "/check-email", "/check-email-token", "/email-login",
 						"/check-email-login", "/login-link")
 				.permitAll().mvcMatchers(HttpMethod.GET, "/profile/*").permitAll().anyRequest().authenticated();
+		
+		
+		http.formLogin()
+		.loginPage("/login").permitAll();
+		
+		http.logout()
+		.logoutSuccessUrl("/");
 	}
 
     @Override
     public void configure(WebSecurity web) throws Exception {
         web.ignoring()
+				.antMatchers("/v2/**").antMatchers("/webjars/**").antMatchers("/swagger**").antMatchers(
+						"/swagger-resources/**")
                 .mvcMatchers("/node_modules/**")
                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations());
     }

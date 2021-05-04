@@ -1,65 +1,84 @@
 package com.studyolle.account.service;
 
+import java.util.List;
+
+import javax.validation.Valid;
+
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
 
-import com.studyolle.config.AppProperties;
-import com.studyolle.email.service.EmailService;
+import com.studyolle.account.controller.UserAccount;
 import com.studyolle.repository.AccountRepository;
 import com.studyolle.repository.dto.Account;
-import com.studyolle.repository.dto.EmailMessage;
 import com.studyolle.repository.dto.SignUpForm;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class AccountService {
-	
+public class AccountService implements UserDetailsService {
 
-	private final AccountRepository accountRepository;
-	private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
-    private final TemplateEngine templateEngine;
-    private final AppProperties appProperties;
-	
-	@Transactional
-	public void processNewAccount(SignUpForm signUpForm) {
-		Account newAccount = saveNewAccount(signUpForm);
-		sendSignUpConfirmEmail(newAccount);
-	}
-	
-	public Account saveNewAccount(SignUpForm signUpForm) {
-		Account account = Account.builder()
-				.email(signUpForm.getEmail())
-				.nickname(signUpForm.getNickname())
-				.password(passwordEncoder.encode(signUpForm.getPassword()))
-				.studyCreatedByWeb(true).studyEnrollmentResultByWeb(true).studyUpdatedByWeb(true).build();
-		Account newAccount = accountRepository.save(account);
+    private final AccountRepository accountRepository;
+    private final JavaMailSender javaMailSender;
+    private final PasswordEncoder passwordEncoder;
 
-		newAccount.generateEmailCheckToken();
-		return newAccount;
-	}
+    @Transactional
+    public Account processNewAccount(SignUpForm signUpForm) {
+        Account newAccount = saveNewAccount(signUpForm);
+        newAccount.generateEmailCheckToken();
+        sendSignUpConfirmEmail(newAccount);
+        return newAccount;
+    }
 
-	public void sendSignUpConfirmEmail(Account newAccount) {
-
-//        Context context = new Context();
-//        context.setVariable("link", );
-//        context.setVariable("nickname", newAccount.getNickname());
-//        context.setVariable("linkName", "이메일 인증하기");
-//        context.setVariable("message", "스터디올래 서비스를 사용하려면 링크를 클릭하세요.");
-//        context.setVariable("host", appProperties.getHost());
-//        String message = templateEngine.process("mail/simple-link", context);
-        
-        EmailMessage emailMessage = EmailMessage.builder()
-                .to(newAccount.getEmail())
-                .subject("스터디올래, 회원 가입 인증")
-                .message("/check-email-token?token=" + newAccount.getEmailCheckToken() +
-                        "&email=" + newAccount.getEmail())
+    private Account saveNewAccount(@Valid SignUpForm signUpForm) {
+        Account account = Account.builder()
+                .email(signUpForm.getEmail())
+                .nickname(signUpForm.getNickname())
+                .password(passwordEncoder.encode(signUpForm.getPassword()))
+                .studyCreatedByWeb(true)
+                .studyEnrollmentResultByWeb(true)
+                .studyUpdatedByWeb(true)
                 .build();
-		emailService.sendEmail(emailMessage);
-	}
+        return accountRepository.save(account);
+    }
+
+    public void sendSignUpConfirmEmail(Account newAccount) {
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(newAccount.getEmail());
+        mailMessage.setSubject("스터디올래, 회원 가입 인증");
+        mailMessage.setText("/check-email-token?token=" + newAccount.getEmailCheckToken() +
+                "&email=" + newAccount.getEmail());
+        javaMailSender.send(mailMessage);
+    }
+
+    public void login(Account account) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                new UserAccount(account),
+                account.getPassword(),
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(token);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String emailOrNickname) throws UsernameNotFoundException {
+        Account account = accountRepository.findByEmail(emailOrNickname);
+        if (account == null) {
+            account = accountRepository.findByNickname(emailOrNickname);
+        }
+
+        if (account == null) {
+            throw new UsernameNotFoundException(emailOrNickname);
+        }
+
+        return new UserAccount(account);
+    }
 }
